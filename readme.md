@@ -9,44 +9,35 @@ This git repository centralizes the study of the material provided during the **
 
 <br>
 
-<div align="center" style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
+<table align="center">
+  <tr>
+    <td align="center">
+      <img alt="Docker" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg"/>
+      <br>Docker
+    </td>
+    <td align="center">
+      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/kubernetes/kubernetes-original.svg" alt="Kubernetes" height="75"/>
+      <br>Kubernetes
+    </td>
+    <td align="center">
+      <img alt="AWS" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" />
+      <br>AWS
+    </td>
+    <td align="center">
+      <img alt="GitHub Actions" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/githubactions/githubactions-original.svg" />
+      <br>GitHub Actions
+    </td>
+    <td align="center">
+      <img alt="Prometheus" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/prometheus/prometheus-original.svg" />
+      <br>Prometheus
+    </td>
+    <td align="center">
+      <img alt="Grafana" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/grafana/grafana-original.svg" />
+      <br>Grafana
+    </td>
+  </tr>
+</table>
 
-  <div style="text-align: center;">
-    <img alt="Docker" height="65" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg"/>
-    <p>Docker</p>
-  </div>
-
-   <div style="text-align: center;">
-    <img alt="PostgreSQL" height="65" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg"/>
-    <p>PostgreSQL</p>
-  </div>
-  
-  <div style="text-align: center;">
-    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/kubernetes/kubernetes-original.svg" alt="Kubernetes" height="75"/>
-    <p>Kubernetes</p>
-  </div>
-  
-  <div style="text-align: center;">
-    <img alt="AWS" height="65" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" />
-    <p>AWS</p>
-  </div>
-  
-  <div style="text-align: center;">
-    <img alt="GitHub Actions" height="65" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/githubactions/githubactions-original.svg" />
-    <p>GitHub Actions</p>
-  </div>
-  
-  <div style="text-align: center;">
-    <img alt="Prometheus" height="65" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/prometheus/prometheus-original.svg" />
-    <p>Prometheus</p>
-  </div>
-  
-  <div style="text-align: center;">
-    <img alt="Grafana" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/grafana/grafana-original.svg" />
-    <p>Grafana</p>
-  </div>
-
-</div>
 
 <br>
         
