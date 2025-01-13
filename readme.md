@@ -9,34 +9,35 @@ This git repository centralizes the study of the material provided during the **
 
 <br>
 
-<table align="center">
+<table align="center" style="border-collapse: collapse;">
   <tr>
-    <td align="center">
+    <td align="center" style="border: none;">
       <img alt="Docker" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg"/>
       <br>Docker
     </td>
-    <td align="center">
+    <td align="center" style="border: none;">
       <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/kubernetes/kubernetes-original.svg" alt="Kubernetes" height="75"/>
       <br>Kubernetes
     </td>
-    <td align="center">
+    <td align="center" style="border: none;">
       <img alt="AWS" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg" />
       <br>AWS
     </td>
-    <td align="center">
+    <td align="center" style="border: none;">
       <img alt="GitHub Actions" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/githubactions/githubactions-original.svg" />
       <br>GitHub Actions
     </td>
-    <td align="center">
+    <td align="center" style="border: none;">
       <img alt="Prometheus" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/prometheus/prometheus-original.svg" />
       <br>Prometheus
     </td>
-    <td align="center">
+    <td align="center" style="border: none;">
       <img alt="Grafana" height="75" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/grafana/grafana-original.svg" />
       <br>Grafana
     </td>
   </tr>
 </table>
+
 
 
 <br>
