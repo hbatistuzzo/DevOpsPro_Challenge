@@ -283,18 +283,41 @@ Now, we can deploy our cluster with 2 methods:
 
 Let's verify:
 
-- `kubectl get pods` yields 1 pod, READY 1/1 (1 container running of 1 declared), STATUS running, RESTARTS 0 and AGE 28s
+- `kubectl get pods` yields 1 pod, READY 1/1 (1 container running of 1 declared), STATUS running, RESTARTS 0 and AGE 28s; you can assign an option wide to view more details: `kubectl get pods -o wide`
 
 - `kubectl describe pod <name-of-the-pod>` yields a whole world of info about the pod!
 
 - `kubectl get replicaset` yields 1 replicaset, the pod controller, DESIRED 1 (how many replicas I _want_ in my cluster), CURRENT 1 (how many replicas I _have_), READY 1 (how many replicas are _ready_).
 
-- you can list the pod and replicaset levels together with 'kubectl get replicaset, pod`. Notice that tha name of the pod is *derived* from the name of the replicaset!
+- you can list the pod and replicaset levels together with `kubectl get replicaset, pod`. Notice that tha name of the pod is *derived* from the name of the replicaset! When dealing with heavier processes (say, if you have a bunch of replicas), consider using a command such as `kubectl apply -f k8s/deployment.yaml && watch 'kubectl get pods'`: the watch combo lets you monitor the progress in realtime.
 
 
 <p align="center">
 <img alt="Docker" width="100%" src="Day2_kubernetes/pods-replica.png"/>
 </p>
+
+
+- `kubeclt get deployment` will show NAME distance_conversion, READY 1/1, UP-TO-DATE 1 and AVAILABLE 1; more on that later.
+
+
+But how to access the application itself? We need to ensure that any request to the specified port of my local machine will be redirected to the port of the pod running the application (just like Docker's port binding). `kubectl port-forward pod/distance-conversion-bc9787b85-mjqhm 8080:5000`
+
+```
+henrique@DESKTOP-GC4MJ58:~/devops_pro_challenge/Day2_kubernetes/distance_conversion$ kubectl port-forward pod/distance-conversion-bc9787b85-mjqhm 8080:5000
+Forwarding from 127.0.0.1:8080 -> 5000
+Forwarding from [::1]:8080 -> 5000
+```
+
+and shazam! Our application will appear in localhost:8080
+
+But this is a pedestrian way to handle the application. We can leverage the power of **service** to establish a single connection point to the pods. It is used every time I want to expose a pod, either internally or externally. It is ubiquitous, and highly customizable.
+
+- "cluster-ip" is a type of service used for internal pod-to-pod connection;
+- "node port" is another type of service which exposes the pod to the external world, since it's accessible through any IP that is part of my kubernetes cluster i.e. any machine that is part of my cluster. Every time I use it, it elects a port that will be used as access: by standard, it's a port ranging from 30.000 to 32.777, and you need to check! This is widely used in _on premises_ scenarios. When using Kubernetes _as a service_, through cloud providers, we end up using the service "Load Balancer", but _bear in mind that every service exposes the ports AND perform load balancing_. It just so happends that when using Load Balancer, this is created ahead of my service, so we're not using the IP's of the machines hosted in the kubernetes cluster to access the service. We'll use the IP created for this Load Balancer. More on that later.
+
+Enough chit-chat, have at you! Let's create the service then.
+
+
 
 
 
