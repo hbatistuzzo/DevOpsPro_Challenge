@@ -249,7 +249,53 @@ We'll create a 'k8s' folder inside that project with a deployment.yaml file; on 
 
 - **metadata**: name, labels, etc; we'll specify the name 'distance-conversion' for now
 
-- **spec**: info on everything I need to run my application e.g. the pod template. It's particularly important to specify the **selector**, which organizes labels in objects through key-value pairs. "What pods will we work with"? Under the hood, we'll use the replica-set, but more on that later. We also need the **replicas**, **template**, **specs**. Check the file.
+- **spec**: info on everything I need to run my application e.g. the pod template. It's particularly important to specify the **selector**, which organizes labels in objects through key-value pairs. "What pods will we work with"? Under the hood, we'll use the replica-set, but more on that later. We also need the **replicas**, **template**, **specs**.
+
+Here's our final result:
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: distance-conversion
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: distance-conversion
+    template:
+      metadata:
+        labels:
+          app: distance-conversion
+      spec:
+        containers:
+        - name: distance-conversion
+          image: hbatistuzzo/distance-conversion:v1
+          ports:
+          - containerPort: 5000
+```
+
+Now, we can deploy our cluster with 2 methods:
+
+`kubectl create -f k8s/deployment.yaml` or `kubectl apply -f k8s/deployment.yaml`; the first tells kubectl to pull the contents from this file and create the kubernetes objects, and can only be run if there aren't any previous files created; the latter updates the files OR creates them, so.. it's the better choice it seems, other than semantics.
+
+>__WARNING__ remember that you must have initialized the cluster beforehand! (e.g. k3d cluster create my-cluster --servers 3 --agents 3)
+
+Let's verify:
+
+- `kubectl get pods` yields 1 pod, READY 1/1 (1 container running of 1 declared), STATUS running, RESTARTS 0 and AGE 28s
+
+- `kubectl describe pod <name-of-the-pod>` yields a whole world of info about the pod!
+
+- `kubectl get replicaset` yields 1 replicaset, the pod controller, DESIRED 1 (how many replicas I _want_ in my cluster), CURRENT 1 (how many replicas I _have_), READY 1 (how many replicas are _ready_).
+
+- you can list the pod and replicaset levels together with 'kubectl get replicaset, pod`. Notice that tha name of the pod is *derived* from the name of the replicaset!
+
+
+<p align="center">
+<img alt="Docker" width="100%" src="Day2_kubernetes/pods-replica.png"/>
+</p>
+
 
 
 
