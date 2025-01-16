@@ -5,7 +5,7 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/hbatistuzzo/desafio_devops_pro)
 ![GitHub last commit](https://img.shields.io/github/last-commit/hbatistuzzo/desafio_devops_pro)
 
-This git repository centralizes the study of the material provided by Fabricio Veronez for the **DevOps & Cloud Challenge** that happened from Jan 13-17 2025, which concerned the practice of the following technologies:
+This git repository centralizes the study of the material provided by Fabricio Veronez for the **DevOps & Cloud Challenge** that happened from Jan 13th to the 17th in 2025; it concerns the practice of the following technologies:
 
 <br>
 
@@ -46,14 +46,19 @@ This git repository centralizes the study of the material provided by Fabricio V
 
 <br>
         
-Namely, the purpose is to provide an e-commerce solution for the continuous delivery of an online store app built on python and containerized through Docker. Their inventory is built as a PostgreSQL database. The application will be run on a Kubernetes cluster and will be monitored through Prometheus and exhibiting the relevant information on Grafana. We'll host the application on an AWS EC2 instance and automate the delivery process through CI/CD pipelines provided by the GitHub Actions platform.
+Namely, the purpose is to provide an e-commerce solution for the continuous delivery of an online store app built on Python and containerized through Docker. Their inventory will be built as a PostgreSQL database. The application will be run on a Kubernetes cluster and will be monitored through Prometheus, while exhibiting relevant information on Grafana. We'll host the application on an AWS EC2 instance and automate the delivery process through CI/CD pipelines provided by the GitHub Actions platform.
 
 <div align="center">
 
-# $\color{goldenrod}{\textrm{1 - Docker}}$
+# $\color{goldenrod}{\textrm{Day 1 - Docker}}$
 
 </div>
 
+<div align="center">
+
+## $\color{goldenrod}{\textrm{1.1 - Intro}}$
+
+</div>
 
 DevOps aims to automate tasks and standardize processes involved in the application development lifecycle. This is where containers are helpful, since they allow the execution of processes in isolated fashion, avoiding conflict between them, solving the "_but it works on my machine_" conundrum. It ensures the application runs the same way regardless of the environment or OS. In a nutshell, it enforces isolation, portability, initialization speed and consistency in the app behavior. Docker is by far the most adopted container solution, and the one we'll use here.
 
@@ -80,7 +85,7 @@ To stop, we use `docker container stop <container-id>`; we can now remove this c
 
 <div align="center">
 
-## $\color{goldenrod}{\textrm{1.1 - Dockerfile}}$
+## $\color{goldenrod}{\textrm{1.2 - Dockerfile}}$
 </div>
 
 Let's run a python-based example project that converts distances. For creating the DOckerFile, we need a python base image, the code itself and any dependencies (and pip, to deal with them). Namely, we`ll use:
@@ -134,11 +139,13 @@ Finally, I can cd into the directory with the Dockerfile and run it with
 
 it was successfully created! So now we can run the container with `docker container run -d -p 8181:5000 distance-conversion`, check that it's running with `docker ps` and see the application running on the brower with localhost:8181
 
-![alt text](dc.png)
+![alt text](Day1_docker/dc.png)
 
 ---
+<div align="center">
 
-## $\color{goldenrod}{\textrm{1.2 - Docker Registry}}$
+## $\color{goldenrod}{\textrm{1.3 - Docker Registry and DockerHub}}$
+
 </div>
 
 We'll store our public images in DockerHub, the oficial registry from Docker. This service is free for public images, but we can purchase secure storage for private images if needed.
@@ -152,5 +159,86 @@ To push the image to DockerHub, we also need to authentice our login, so `docker
 Since this is the latest version, it's also a good practice to label it as such. Just use `docker tag hbatistuzzo/distance-conversion:v1 hbatistuzzo/distance-conversion:latest`, and then push that with `docker push hbatistuzzo/distance-conversion:latest`
 
 ---
+
+<div align="center">
+
+# $\color{goldenrod}{\textrm{Day 2 - Kubernetes}}$
+
+## $\color{goldenrod}{\textrm{2.1 - Intro}}$
+
+</div>
+
+Kubernetes is the most widely used container orchestrator available today. It's a particularly good combo with Docker, allowing both **environment stardardization** and **managing update deploys of applications in production phase without the risk of downtime**.
+
+Docker alone handles projects of small complexity, but an orchestrator becomes essential once the focus shifts to **scalability, resilience and 24/7 availability**. In these cases it becomes necessary to manage load balancing, for example.
+
+It works with a cluster architecture, being composed of 2 main parts:
+- **The Control Plane**, which includes the: 
+  - API Server: main communication service with Kubernets;
+  - etcd: a key-value database that stores the cluster info;
+  - scheduler: which defines which containers will be run in which nodes;
+  - the controller manager: that manages the desired state of the cluster.
+- **Worker Nodes**, which includes the:
+  - kubelet: responsible for ensuring that containers are running, by communicating with the runtime container;
+  - kube-proxy: that manages the network communication in the cluster.
+
+There are a few ways of creating Kubernetes' clusters.
+  - **_on premise_**: the more complex way, you're responsible for managing the cluster creation yourself: linux installation, updating, cluster configuration and applications. Not recommended for beginners.
+  - **_as a service_**: which uses tools managed by the main cloud providers (e.g. EKS, AKS, GKE); here, you simply request the cluster creation and it is provided to you as a black box.
+  - **local environment**: the didactic, proof of concept approach, using tools such as Minikube, Kind or K3d, which create the cluster based on Docker containers i.e. every cluster machine will be a container on the local machine.
+
+Let's take our first steps by using the light K3d approach. Containers will simulate the nodes in the cluster. We first install kubectl and k3d following the respective instructions (I'm doing it on my ubuntu machine through WSL2). Now we're done to dive in:
+
+
+<div align="center">
+
+## $\color{goldenrod}{\textrm{2.2 - Creating a cluster}}$
+
+</div>
+
+A default, single-node cluster can be created with `k3d cluster create`. This node executes all of the functions that are usually divided into each of the components of the Control Plane and the Worker Nodes.
+
+We can visualize the nodes with `kubectl get nodes`, which lists a single node with the roles "control_plane" and "master". I can also see the clusters with `k3d cluster list`: it lists a single cluster with 1/1 servers (a control plane) and 0/0 agents (that would be the worker nodes). The LOADBALANCER is also created by default, a separate container that emulates a machine whose sole purpose is load balancing.
+
+![alt text](Day2_kubernetes/intro.png)
+
+By the way, when we create the cluster with K3d, it also manages the kubectl setup, so the integration is seamless. 
+
+<p align="center">
+<img alt="Docker" width="70%" src="Day2_kubernetes/weebl.png"/>
+</p>
+
+Indeed! More importantly, if I inspect the docker situation with `docker container ls`, I'll see the newly created containers being managed by k3d. We can delete them with `k3d cluster delete`.
+
+Let's build a more complex cluster, with increased servers (control planes) and agents (worker nodes):
+
+`k3d cluster create my-cluster --servers 3 --agents 3`
+
+Takes more time, naturally. Kubeclt shows us the current situation:
+
+<p align="center">
+<img alt="Docker" width="100%" src="Day2_kubernetes/intro2.png"/>
+</p>
+
+It is ok to see a control plane acting as a worker in this scenario.
+
+<div align="center">
+
+## $\color{goldenrod}{\textrm{2.3 - Creating an efficient cluster}}$
+
+</div>
+
+A proper cluster will have different interacting agents working together, such as the:
+
+1) pod: the smallest level of the kubernetes cluster, where I run my containers;
+2) replica-set: manages the scalability and resiliency of the pods. It's a pod controller.
+3) deployment: manages the replica-set for versioning.
+4) service: used to expose the pods and the application in the cluster.
+
+The good news is that everything in Kubernetes is created in declarative fashion (just like Docker Compose!) through a .yaml _Manifest_ file.
+
+
+
+
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
