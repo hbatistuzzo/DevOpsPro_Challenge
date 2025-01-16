@@ -5,7 +5,7 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/hbatistuzzo/desafio_devops_pro)
 ![GitHub last commit](https://img.shields.io/github/last-commit/hbatistuzzo/desafio_devops_pro)
 
-This git repository centralizes the study of the material provided by Fabricio Veronez for the **DevOps & Cloud Challenge** that happened from Jan 13th to the 17th in 2025; it concerns the practice of the following technologies:
+This git repository centralizes the study of the material provided by Fabricio Veronez for the **DevOps & Cloud Challenge** that happened from Jan 13th to the 17th in 2025, mixed with my personal notes, observations and general tomfoolery. It concerns the practice of the following technologies:
 
 <br>
 
@@ -237,6 +237,19 @@ A proper cluster will have different interacting agents working together, such a
 
 The good news is that everything in Kubernetes is created in declarative fashion (just like Docker Compose!) through a .yaml _Manifest_ file.
 
+We need to have the appropriate images readily available if they'll be utilized in this deployment. In this example, we'll use the distance app created previously.
+
+We'll create a 'k8s' folder inside that project with a deployment.yaml file; on that sort of file, we'll almost always need to define 4 components:
+
+- **apiVersion** and **Kind**: every object created in Kubernetes is grouped in API's, so this is explicitly states to avoid conflicts. We can use `kubectl api-resources` to show a list of objects that we can create (pods, deployments, replica-sets, etc), with APIVERSION and KIND fields conveniently placed for us. Since we're creating a deployment, we'll input 'apps/v1' and 'Deployment' in our .yaml file.
+
+<p align="center">
+<img alt="Docker" width="70%" src="Day2_kubernetes/api-resources.png"/>
+</p>
+
+- **metadata**: name, labels, etc; we'll specify the name 'distance-conversion' for now
+
+- **spec**: info on everything I need to run my application e.g. the pod template. It's particularly important to specify the **selector**, which organizes labels in objects through key-value pairs. "What pods will we work with"? Under the hood, we'll use the replica-set, but more on that later. We also need the **replicas**, **template**, **specs**. Check the file.
 
 
 

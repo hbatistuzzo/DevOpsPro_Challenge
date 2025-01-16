@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: distance-conversion
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: distance-conversion
+    template:
+      metadata:
+        labels:
+          app: distance-conversion
+      spec:
+        containers:
+        - name: distance-conversion
+          image: hbatistuzzo/distance-conversion:v1
+          ports:
+          - containerPort: 5000
+
