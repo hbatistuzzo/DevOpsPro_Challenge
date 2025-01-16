@@ -315,12 +315,112 @@ But this is a pedestrian way to handle the application. We can leverage the powe
 - "cluster-ip" is a type of service used for internal pod-to-pod connection;
 - "node port" is another type of service which exposes the pod to the external world, since it's accessible through any IP that is part of my kubernetes cluster i.e. any machine that is part of my cluster. Every time I use it, it elects a port that will be used as access: by standard, it's a port ranging from 30.000 to 32.777, and you need to check! This is widely used in _on premises_ scenarios. When using Kubernetes _as a service_, through cloud providers, we end up using the service "Load Balancer", but _bear in mind that every service exposes the ports AND perform load balancing_. It just so happends that when using Load Balancer, this is created ahead of my service, so we're not using the IP's of the machines hosted in the kubernetes cluster to access the service. We'll use the IP created for this Load Balancer. More on that later.
 
-Enough chit-chat, have at you! Let's create the service then.
+Enough chit-chat, have at you! Let's create the service. We need to add an additional object in the deployment.yaml manifest file.
 
+```
+---
 
+apiVersion: v1
+kind: Service
+metadata:
+  name: distance-conversion
+spec:
+  selector:
+      app: distance-conversion
+  ports:
+  - port: 80
+    targetPort: 5000
+```
 
+pay close attention to this section:
 
+```
+    ports:
+    - port: 80
+    - targetPort: 5000
+```
 
+The standard HTTP port for web applications is 80, but I need to make the connection to the port 5000 of the pod who will be running the application.
 
+Rerun the apply and then run `kubectl get all` to list all main objects: pods, services, deployments and replicasets. See, in service, the CLUSTER-IP that I can use (but _SHOULDN'T), a <none> EXTERNAL-IP (since we're not using a Load Balancer) and the 80/TCP port. The Type is 'cluster-ip', which as noted above denotes pod-to-pod connection, an internal way of accessing the applciation.
+
+<p align="center">
+<img alt="Docker" width="100%" src="Day2_kubernetes/getall.png"/>
+</p>
+
+This is still not what I want. I'd like to access the application externally. But I can't use the Load Balancer because I'm on a local environment (there's no cloud provider connected!). What do? We'll use the **node port**: add the `  type: NodePort` to the end of the manifest and rerun.
+
+<p align="center">
+<img alt="Docker" width="100%" src="Day2_kubernetes/nodeport.png"/>
+</p>
+
+We now have a 80:30159/TCP port forwarding! So we could access this in the browser by using `<ip-of-the-machine-that-is-running-the-app>:30159`
+
+So we now have this issue: local environment. There's no "machine IP". To fix this we must slightly alter the creation process of the kubernetes cluster. So first of all, destroy the cluster: `k3d cluster delete my-cluster`; recreate with an additional parameter -p (for port publishing/binding! Just like Docker. I'll bind the port of the container to a port in my machine): `k3d cluster create my-cluster --servers 2 --agents 2 -p "8080:30000@loadbalancer"`; we should not use the traditional 80 port in this case for our machine. And we must select one of those node ports from 30000 to 32777; we also specify what container k3d will create to make this binding: loadbalancer.
+
+`kubeclt get nodes` shows everything ok. `docker container ls` shows the binding! 0.0.0.0:8080->30000/tcp. Ok, now rerun the apply and sthen `kubeclt get all` to get our sweet info.
+
+I've created an additional problem now, however. I've published it to 30.000, but when choosing a port in the creation process, NodePort chose port 32569.
+
+<p align="center">
+<img alt="Docker" width="100%" src="Day2_kubernetes/ohoh.png"/>
+</p>
+
+We must thus specify the nodePort parameter in the manifest file as well, forcing his hand:
+
+```
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: distance-conversion
+spec:
+  selector:
+      app: distance-conversion
+  ports:
+  - port: 80
+    targetPort: 5000
+    nodePort: 30000
+  type: NodePort
+```
+
+rerun the apply, and we'll now be able to access the application in localhost:8080
+
+Hot Damn! Also, add more replicas on the manifest. Redeploy, and you'll notice that when refreshing the page, the server that is processing the requistion _changes_: there is a high real availability of my application now, managed with load balancing.
+
+Finally, we can check the updating aspect of the application. Suppose we make a slight change (I've added a "Second version" string to the index.html file). We must now rebuild the image and then re-upload it to the registry, DockerHub, with the v2 tag:
+
+`docker build -t hbatistuzzo/distance-conversion:v2 --push .`
+
+Now alter the manifest so it knows to use the version v2:
+
+```
+spec:
+  replicas: 8
+  selector:
+    matchLabels:
+      app: distance-conversion
+  template:
+    metadata:
+      labels:
+        app: distance-conversion
+    spec:
+      containers:
+      - name: distance-conversion
+        image: hbatistuzzo/distance-conversion:v2
+        ports:
+        - containerPort: 5000
+```
+
+and rerun the apply BUT with the watch combo: `kubectl apply -f k8s/deployment.yaml && watch 'kubectl get pod'`. You'll see that it starts destroying the old pods, and creating new ones, but it does so in a way that it _ensures_ there will be NO DOWNTIME for the application. There is always a replica handling the app. Always. But how? Check `kubectl get all`, you'll see that it lists 2 replicasets, one for the older v1 version and one for the newer v2 version. This was managed by the "deployment" component. The deployment section now yields all 8 containers UP-TO-DATE.
+
+I personally think that the best way to monitor this is through ``kubectl apply -f k8s/deployment.yaml && watch 'kubectl get pod,deployment,replicaset'`. If I change the spec in the manifest to draw the v1 version of the image, k3d will perform a rollback. I can see the DESIRED, CURRENT and READY status for the replicasets changing.
+
+<p align="center">
+<img alt="Docker" width="100%" src="Day2_kubernetes/v2.png"/>
+</p>
+
+In reality, I didn't even need to alter the deployment.yaml for the rollback to work, since I can use the handy command `kubectl rollout history deployment distance-conversion` to check the revision history and `kubectl rollout undo deployment distance-conversion && watch 'kubectl get pod'` to watch the rollback happening. The application won't show the "v2 version" in the webpage no more.
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
