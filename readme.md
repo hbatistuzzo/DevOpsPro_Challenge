@@ -423,4 +423,391 @@ I personally think that the best way to monitor this is through ``kubectl apply 
 
 In reality, I didn't even need to alter the deployment.yaml for the rollback to work, since I can use the handy command `kubectl rollout history deployment distance-conversion` to check the revision history and `kubectl rollout undo deployment distance-conversion && watch 'kubectl get pod'` to watch the rollback happening. The application won't show the "v2 version" in the webpage no more.
 
+---
+
+<div align="center">
+
+# $\color{goldenrod}{\textrm{Day 3 - AWS Cloud}}$
+
+## $\color{goldenrod}{\textrm{3.1 - Intro}}$
+
+</div>
+
+Cloud platforms provide myriad services (such as Storage, Tools/Software availability, Processing capability, Creation platforms) and it's usually more cost-efficient than on-premises solutions, since it subtracts expenses with hardware, internal servers, software licenses, etc, while offering online support.
+
+Amazon's AWS currently dominates this market, followed by Microsoft's Azure, Google's GCP, Oracle CI and Digital Ocean. Such solutions are being widely adopted worldwide as it simplifies scalability and management (by ensuring elasticity of computational resources and decreasing acquisition time), offers service resilience and optimizes application cost since it works on-demand.
+
+I expand further on the advantages and disadvantages of On-Premise, IaaS, PaaS and SaaS models on my cloud_study git repository. This current project will focus on 
+
+We should touch on the concepts of Region and Availability Zone. AWS has service infrastrucuture spread throughout the globe, including one in South America, São Paulo, since 2011. It's expanding rapidly, and the user can choose which of these regions to use (to address latency concerns, for example). The Availability Zone, AZ, regards the Data Centers themselves i.e. the physical, hardware systems. Each region has several interconnected AZ's to ensure resiliency (if one AZ breaks for whatever reason, the others should still be able to handle the load).
+
+<div align="center">
+
+## $\color{goldenrod}{\textrm{3.2 - IAM}}$
+
+</div>
+
+The Identity and Access Manager lets us define users, user groups and roles, as well as assign policies that will control the access level for said users. I'll use these features to detach this present study from my root account; as a rule of thumb, this separation of the root user from specific users/groups/roles is usually a good practice and ensures security. Namely, I'll create, _in this order_:
+
+1) a new user group, `cloud_study`, and assign AdministratorAccess;
+2) a new user, `study`, enabling the option for "providing user access to the AWS management console", since I don't want to be confined to the CLI. It'll be an IAM user, and the permissions will be set by adding this user to the `cloud_study` group. I'll add a tag just for organizational purposes. It creates the user, shows us the account_id, allows us to download the info and gives us a link to authenticate. We must log out from our current user to perform this task. Logging into this new user shows us a dashboard with limited access (e.g. no billing info. Which is good. It has adm access. We can also configure standard regions, language, etc)
+
+<div align="center">
+
+## $\color{goldenrod}{\textrm{3.2 - EKS}}$
+
+</div>
+
+For the purpose of this study, we'll create an EKS (Elastic Kubernetes Service) cluster. EKS is neither IaaS nor PaaS, it sits in-between these two as a CaaS (Cluster as a Service):
+
+<p align="center">
+<img alt="Docker" width="100%" src="Day3_cloud/CaaS.png"/>
+</p>
+
+AWS manages everything up to the Container level. The Runtime, Data and Applications are left for us to manage. This is quite handy, and saves a lot of time. We don't need to define Control Planes, Worker Nodes, etc; we simply declare the version we want to use and specify the node group. There are a few steps:
+
+1) Create the roles and policies for the Kubernetes Cluster and Worker Nodes;
+2) Set up the network; this is done with the "Cloud Formation" service from AWS, which (thankfully) is declarative.
+
+<div align="center">
+
+### $\color{goldenrod}{\textrm{3.2.1 - Cluster and Worker Roles}}$
+
+</div>
+
+Back on IAM, let's set up the role for the cluster:
+
+- Roles --> Create role --> AWS service (we're planning on using EKS) --> Use case = EKS --> Service = EKS-Cluster; it suggests using the `AmazonEKSClusterPolicy` in Permission Policies, alright --> Define Role Name ("eks-cluster") and done.
+
+Now the role for the worker nodes:
+
+- Roles --> Create role --> AWS service --> Use case = EC2 --> Service = EC2; this is a more generic service, so now, in Permission Polcies, we must search 3 policies: "AmazonEKSWorkerNodePolicy" (for the Worker Nodes themselves), "AmazonEKS_CNI_Policy (for Container Networking Interfacing) and "AmazonEC2ContainerRegistryReadOnly" (not essential, but allows us to work with Container Registry); --> Define Role Name ("eks-worker") and done.
+
+
+<div align="center">
+
+### $\color{goldenrod}{\textrm{3.2.2 - Network Setup}}$
+
+</div>
+
+Now we must create the network that will be used by the Kubernetes Cluster. This _can_ get very complex, so we'll use a template instead (a yaml file with declarative code). Let's search "Cloud Formation" on the dashboard. This is a IaC (Infrastructure as Code) feature!
+
+- Stacks --> Create Stack --> Choose an existing template --> Amazon S3 URL --> insert "https://s3.us-west-2.amazonaws.com/amazon-eks/cloudformation/2020-10-29/amazon-eks-vpc-private-subnets.yaml" --> Next --> Stack name = "eks-study-stack", leave the parameters as is (we're creating 2 public and 2 private Subnet Blocks) --> next, review, etc, create!
+
+The template _is_ quite intimidating. It looks like this:
+
+```
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Amazon EKS Sample VPC - Private and Public subnets'
+
+Parameters:
+
+  VpcBlock:
+    Type: String
+    Default: 192.168.0.0/16
+    Description: The CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
+
+  PublicSubnet01Block:
+    Type: String
+    Default: 192.168.0.0/18
+    Description: CidrBlock for public subnet 01 within the VPC
+
+  PublicSubnet02Block:
+    Type: String
+    Default: 192.168.64.0/18
+    Description: CidrBlock for public subnet 02 within the VPC
+
+  PrivateSubnet01Block:
+    Type: String
+    Default: 192.168.128.0/18
+    Description: CidrBlock for private subnet 01 within the VPC
+
+  PrivateSubnet02Block:
+    Type: String
+    Default: 192.168.192.0/18
+    Description: CidrBlock for private subnet 02 within the VPC
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Worker Network Configuration"
+        Parameters:
+          - VpcBlock
+          - PublicSubnet01Block
+          - PublicSubnet02Block
+          - PrivateSubnet01Block
+          - PrivateSubnet02Block
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:  !Ref VpcBlock
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-VPC'
+
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+
+  VPCGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: Public Subnets
+      - Key: Network
+        Value: Public
+
+  PrivateRouteTable01:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: Private Subnet AZ1
+      - Key: Network
+        Value: Private01
+
+  PrivateRouteTable02:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: Private Subnet AZ2
+      - Key: Network
+        Value: Private02
+
+  PublicRoute:
+    DependsOn: VPCGatewayAttachment
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PrivateRoute01:
+    DependsOn:
+    - VPCGatewayAttachment
+    - NatGateway01
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable01
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway01
+
+  PrivateRoute02:
+    DependsOn:
+    - VPCGatewayAttachment
+    - NatGateway02
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable02
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway02
+
+  NatGateway01:
+    DependsOn:
+    - NatGatewayEIP1
+    - PublicSubnet01
+    - VPCGatewayAttachment
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt 'NatGatewayEIP1.AllocationId'
+      SubnetId: !Ref PublicSubnet01
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-NatGatewayAZ1'
+
+  NatGateway02:
+    DependsOn:
+    - NatGatewayEIP2
+    - PublicSubnet02
+    - VPCGatewayAttachment
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt 'NatGatewayEIP2.AllocationId'
+      SubnetId: !Ref PublicSubnet02
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-NatGatewayAZ2'
+
+  NatGatewayEIP1:
+    DependsOn:
+    - VPCGatewayAttachment
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+
+  NatGatewayEIP2:
+    DependsOn:
+    - VPCGatewayAttachment
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+
+  PublicSubnet01:
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Subnet 01
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Fn::Select:
+        - '0'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock:
+        Ref: PublicSubnet01Block
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: !Sub "${AWS::StackName}-PublicSubnet01"
+      - Key: kubernetes.io/role/elb
+        Value: 1
+
+  PublicSubnet02:
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Subnet 02
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Fn::Select:
+        - '1'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock:
+        Ref: PublicSubnet02Block
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: !Sub "${AWS::StackName}-PublicSubnet02"
+      - Key: kubernetes.io/role/elb
+        Value: 1
+
+  PrivateSubnet01:
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Subnet 03
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - '0'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock:
+        Ref: PrivateSubnet01Block
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: !Sub "${AWS::StackName}-PrivateSubnet01"
+      - Key: kubernetes.io/role/internal-elb
+        Value: 1
+
+  PrivateSubnet02:
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Private Subnet 02
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+        - '1'
+        - Fn::GetAZs:
+            Ref: AWS::Region
+      CidrBlock:
+        Ref: PrivateSubnet02Block
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: !Sub "${AWS::StackName}-PrivateSubnet02"
+      - Key: kubernetes.io/role/internal-elb
+        Value: 1
+
+  PublicSubnet01RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet01
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet02RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet02
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet01RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet01
+      RouteTableId: !Ref PrivateRouteTable01
+
+  PrivateSubnet02RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet02
+      RouteTableId: !Ref PrivateRouteTable02
+
+  ControlPlaneSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Cluster communication with worker nodes
+      VpcId: !Ref VPC
+
+Outputs:
+
+  SubnetIds:
+    Description: Subnets IDs in the VPC
+    Value: !Join [ ",", [ !Ref PublicSubnet01, !Ref PublicSubnet02, !Ref PrivateSubnet01, !Ref PrivateSubnet02 ] ]
+
+  SecurityGroups:
+    Description: Security group for the cluster control plane communication with worker nodes
+    Value: !Join [ ",", [ !Ref ControlPlaneSecurityGroup ] ]
+
+  VpcId:
+    Description: The VPC Id
+    Value: !Ref VPC
+```
+
+This process takes a while, so we'll brew some coffee.
+
+<p align="center">
+<img alt="Docker" width="100%" src="Day3_cloud/stack.png"/>
+</p>
+
+That took a couple of minutes. But I figure it'll take some days of study to really understand what's going on under the hood. For now, it suffices.
+
+Let's check our progress in the VPC (look it up in the dashboard). Sure enough, the "Your VPCs" menu exhibits the newly created "eks-study-stack-VPC" (it appends -VPC to the end of our input).
+
+Finally, we can create the Kubernetes Cluster itself with EKS.
+
+<div align="center">
+
+### $\color{goldenrod}{\textrm{3.2.3 - Creating the EKS Cluster}}$
+
+>__Warning__ Take a moment to acknowledge the tension in the air. The temperature drops and you become more keenly aware of your surroundings. We roll a Shivers check, and pass: it enables you to hear the net itself, to truly belong to the web. It is a supra-natural ability; old wrongs play out in present time, scenes across the net happen in front of you. But who is speaking? 
+
+<p align="center">
+<img alt="Docker" width="50%" src="Day3_cloud/shivers.png"/>
+</p>
+
+
+
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
