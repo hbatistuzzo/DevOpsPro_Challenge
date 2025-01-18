@@ -802,7 +802,7 @@ Finally, we can create the Kubernetes Cluster itself with EKS.
 
 ### $\color{goldenrod}{\textrm{3.2.3 - Creating the EKS Cluster}}$
 
->__Warning__ Take a moment to acknowledge the tension in the air. Raise the hair on your neck. Tune in to the web. It's 4 am, the temperature drops and you become more keenly aware of your surroundings. We roll a **Shivers** check, and fail: it enables you to hear the net itself, to truly belong to the web. It is a supra-natural ability; old wrongs play out in present time, scenes across the net happen in front of you. But who is speaking? In the depths of our Inland Empire we hear the faint sound of AWS Virtual Machines ticking in their endless toil, and they will persist long after the world has moved on. We _create_ these users, roles, groups, IAMs, VPCs, EKS Clusters knowing full well that **somewhere** one of these godforsaken features is triggering CPU usage in North Virginia (oh I'm sorry, _us-east-1 region_), and thus most unfortunately trickling dollars on our billing setting (which, I'll remind you, is _blocked for view_ for our current IAM user, _as-per-the-good-practices-dictate_). One _would_ like to rest, oh yes, but one can't, because there is always that persistent voice ringing in the back of our ancient reptilian brain telling us that we just _might_ have forgotten that one feature active, and the number on AWS's Cost and Billing Management dashboard will somehow sextuplicate once converted to Brazilian R$, annihilating our meager bank reserves overnight. Thank you, Amazon, for providing your users with such a **thriling** experience. We are, truly, blessed.
+>__Warning__ Take a moment to acknowledge the tension in the air. Raise the hair on your neck. Tune in to the web. It's 4 am, the temperature drops and you become more keenly aware of your surroundings. We roll a **Shivers** check, and fail: it enables you to hear the net itself, to truly belong to the web. It is a supra-natural ability; old wrongs play out in present time, scenes across the net happen in front of you. But who is speaking? In the depths of our Inland Empire we hear the faint sound of AWS Virtual Machines ticking in their endless toil, and they will persist long after the world has moved on. We create users, roles, groups, IAMs, VPCs, EKS Clusters knowing full well that **somewhere** one of these godforsaken features is triggering CPU usage in North Virginia, and thus most unfortunately trickling dollars every minute on our billing setting (which is _blocked for view_ for our current IAM user, _as-per-the-good-practices-dictate_). Sure we'd like to rest, but we can't, because there is always that persistent voice ringing in the back of our ancient reptilian brain telling us that we just _might_ have forgotten that one little feature active, and the number on AWS's Cost and Billing Management dashboard will somehow sextuplicate once converted to Brazilian R$, annihilating our meager bank reserves overnight. Thank you, Amazon, for providing your users with such a **thriling** experience. We are, truly, blessed.
 
 
 <p align="center">
@@ -828,12 +828,130 @@ We review add-ons, additional settings, logging options, etc, and finally create
 
 To configure the EKS cluster locally, we need to use the AWS CLI (check the cloud study rep for install instructions). 
 
-
 Remember to authenticate the user by creating an access key token in IAM --> Users --> security credentials; on the CLI, we must now run `aws eks update-kubeconfig --name <name-of-our-cluster>` in order for EKS to check these credentials
 
 If we run `kubectl get nodes`, it'll show "no resources found"; yes, we've created the cluster. We have the Control Plane, but we still don't have any worker nodes to run the pods. We do that at AWS in EKS --> Clusters --> Compute tab, and add a node group!
 
-The node group defines the computational profile that we'll use in our cluster. Let's name it "study-default" and add the `eks-worker` IAM role. The next page will show our profile: we'll use Amazon Linux machines with On-Demand capacity, and t3.medium instance with 20 GiB. We can also define the scaling configuration: let's use 2-2-2.
+The node group defines the computational profile that we'll use in our cluster. Let's name it "study-default" and add the `eks-worker` IAM role. The next page will show our profile: we'll use Amazon Linux machines with On-Demand capacity, and t3.medium instance with 20 GiB. We can also define the scaling configuration: let's use 2-2-2. We must now define in which subnets we will deploy our EC2 nodes; usually it's a good custom to deploy them in the private subnets. Review, and create. It takes 5 to 10 min.
+
+Now, `kubectl get nodes` will exhibit the "ip-xxx-xxx-xxx-xxx.ec2.internal" nodes, who are ready to be utilized. Everything is ready to receive the deploy of our application!
+
+---
+
+KubeDev's Fake-Shop application can be found in the src folder together with a README file. It's developed in python with similar technologies to the distance-conversion project we deployed on Day2 (flask, g-unicorn, etc); it encompasses a PostgreSQL database managed through SQLAlchemy. It has a Dockerfile ready to build the image and a shell entrypoint that will secure the database creation and the webpage deploy.
+
+We build the image with `docker build -t hbatistuzzo/fake-shop:v1 --push .`. Now we can deploy the application on Kubernetes; once again, we must create the manifest .yaml file. Let's synthesize the information so far: our e-commerce is a web application which interfaces with a postgres DB, thus we need to set the DB _and_ and the web app. Hence we need _TWO_ deploys, with _TWO_ services. It's important to note that the webapp needs to be exposed to the "exterior", but not the DB. We'll add a "k8s" folder to host the manifest.
+
+Let's start with the PostgreSQL DB:
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgre
+spec:
+  selector:
+    matchLabels:
+      app: postgre
+  template:
+    metadata:
+      labels:
+        app: postgre
+    spec:
+      containers:
+        - name: postgre
+          image: postgres:13.16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: fakeshop
+            - name: POSTGRES_USER
+              value: fakeshop
+            - name: POSTGRES_PASSWORD
+              value: Pg1234
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgre
+spec:
+  selector:
+    app: postgre
+  ports:
+    - port: 5432
+      targetPort: 5432
+```
+
+Let's deploy! `kubectl apply -f k8s/deployment.yaml`
+
+`kubectl get pod` shows 1 pod running. `kubectl get all` shows our 2 services, the deployment and the replicaset. Great!
+
+We must now deploy the web application. We configure it in the same deployment.yaml file:
+
+```
+# postgre manifest code etc etc
+---
+# deployment of web application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fakeshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fakeshop
+  template:   # Moved out from under selector
+    metadata:
+      labels:
+        app: fakeshop
+    spec:
+      containers:
+        - name: fakeshop
+          image: hbatistuzzo/fake-shop
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DB_HOST
+              value: postgre
+            - name: DB_USER
+              value: fakeshop
+            - name: DB_PASSWORD
+              value: Pg1234
+            - name: DB_NAME
+              value: fakeshop
+            - name: FLASK_APP
+              value: index.py
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fakeshop
+spec:
+  selector:
+    app: fakeshop  # Added missing space
+  ports:
+    - port: 80
+      targetPort: 5000
+  type: LoadBalancer
+```
+
+Let's deploy again! `kubectl apply -f k8s/deployment.yaml`
+
+`kubectl get pod` shows 2 pods running. Great!
+
+`kubectl get service` yields an external IP for us to access our application, provided by AWS. Whoa it actually works.
+
+If I were to delete this pod with `kubectl delete pod fakeshop-etc` (get the actual name with `kubectl get pod`), there would be a little bit of downtime since I've only specified 1 replica, so the cluster must configure a new one from scratch.
+
+We can increase the number of replicas on the manifest file (say.. 4). We apply again, and now if I delete a pod, the service consistently stays up without any downtime, since there is a pod ready to jump in and take the deleted one's place. No downtime. Flabbergasting.
+
+The same happens if I decide to alter the application itself (e.g. the index.html), rebuild the image, push it to DockerHub as a "v2" and redeploy with `kubectl apply etc`. The web application will be redeployed asap, but there will never be any downtime. The v1 will stay up until the cluster is 100% ready to deploy the v2.
+
+This is, in theory, one of the most efficient ways to deploy an application nowadays.
+
+>__WARNING__ REMEMBER TO DESTROY THE CLUSTER, LEST AMAZON SUCKS YOUR BANK ACCOUNT DRY
 
 
 
