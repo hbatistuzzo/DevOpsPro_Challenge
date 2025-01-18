@@ -804,9 +804,40 @@ Finally, we can create the Kubernetes Cluster itself with EKS.
 
 >__Warning__ Take a moment to acknowledge the tension in the air. Raise the hair on your neck. Tune in to the web. It's 4 am, the temperature drops and you become more keenly aware of your surroundings. We roll a **Shivers** check, and fail: it enables you to hear the net itself, to truly belong to the web. It is a supra-natural ability; old wrongs play out in present time, scenes across the net happen in front of you. But who is speaking? In the depths of our Inland Empire we hear the faint sound of AWS Virtual Machines ticking in their endless toil, and they will persist long after the world has moved on. We _create_ these users, roles, groups, IAMs, VPCs, EKS Clusters knowing full well that **somewhere** one of these godforsaken features is triggering CPU usage in North Virginia (oh I'm sorry, _us-east-1 region_), and thus most unfortunately trickling dollars on our billing setting (which, I'll remind you, is _blocked for view_ for our current IAM user, _as-per-the-good-practices-dictate_). One _would_ like to rest, oh yes, but one can't, because there is always that persistent voice ringing in the back of our ancient reptilian brain telling us that we just _might_ have forgotten that one feature active, and the number on AWS's Cost and Billing Management dashboard will somehow sextuplicate once converted to Brazilian R$, annihilating our meager bank reserves overnight. Thank you, Amazon, for providing your users with such a **thriling** experience. We are, truly, blessed.
 
+
 <p align="center">
 <img alt="Docker" width="50%" src="Day3_cloud/shivers.png"/>
 </p>
+
+</div>
+
+Let's head to EKS --> Clusters --> Create Cluster
+
+We'll choose a custom configuration, disabling EKS Auto Mode (which _does_ facilitate the process, but we want to dive into the specifics for didactic purposes).
+
+We name the cluster and associate a Cluster IAM role (the `eks-cluster` role we create above); we can choose the Kubernetes version (1.31 in this case) with standard config.
+
+On the next page, we define the network. We can now choose the `eks-studdy-stack-VPC` created above, instead of the default VPC, as well as the 4 subnets created during that process. We also add the `eks-study-stack-ControlPlaceSecurityGroup` as an additional security group.
+
+
+On the Cluster endpoint access we define how to access the Kube API Server (the endpoint to communicate with Kubernetes): if private, it'll only work if we're using the AWS network i.e. we won't be able to access it externally, from outside the VPC. If public, everytime the worked nodes need to communicate with the cluster, they'll have to exit AWS's VPC, and access the API Server via internet; The public and private option is the mix that works just right for us.
+
+We review add-ons, additional settings, logging options, etc, and finally create the cluster. This will take 10, 15 minutes..
+
+---
+
+To configure the EKS cluster locally, we need to use the AWS CLI (check the cloud study rep for install instructions). 
+
+
+Remember to authenticate the user by creating an access key token in IAM --> Users --> security credentials; on the CLI, we must now run `aws eks update-kubeconfig --name <name-of-our-cluster>` in order for EKS to check these credentials
+
+If we run `kubectl get nodes`, it'll show "no resources found"; yes, we've created the cluster. We have the Control Plane, but we still don't have any worker nodes to run the pods. We do that at AWS in EKS --> Clusters --> Compute tab, and add a node group!
+
+The node group defines the computational profile that we'll use in our cluster. Let's name it "study-default" and add the `eks-worker` IAM role. The next page will show our profile: we'll use Amazon Linux machines with On-Demand capacity, and t3.medium instance with 20 GiB. We can also define the scaling configuration: let's use 2-2-2.
+
+
+
+
 
 
 
