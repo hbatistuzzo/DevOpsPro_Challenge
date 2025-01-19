@@ -951,12 +951,48 @@ The same happens if I decide to alter the application itself (e.g. the index.htm
 
 This is, in theory, one of the most efficient ways to deploy an application nowadays.
 
->__WARNING__ REMEMBER TO DESTROY THE CLUSTER, LEST AMAZON SUCKS YOUR BANK ACCOUNT DRY
+>__WARNING__ REMEMBER TO DESTROY THE CLUSTER, LEST AMAZON SUCK YOUR BANK ACCOUNT DRY
+
+---
+
+<br>
+
+<div align="center">
+
+# $\color{goldenrod}{\textrm{Day 4 - GitHub Actions}}$
+
+## $\color{goldenrod}{\textrm{4.1 - Intro}}$
+
+</div>
+
+We're deeper into DevOps territory now, in an area that only somewhat intersects traditional Data Engineering. We'll tackle CI/CD pipelines, for example, but here there is a focus in automating the deploy of applications, which is a whole different concept from ETL pipelines.
+
+- CI stands for **Continuous Integration**, which aims to manage the correct delivery of a new release for my application i.e. I want to ensure that I can merge new code into the previous one without breaking any features or losing process quality. It's straightfoward to understand why this is such a big deal in DevOps (more Dev than Ops, actualaly). Here we have the design of test mapping, build staging, code analysis, security/vulnerability checks.
+
+<p align="center">
+<img alt="CI" width="100%" src="Day4_GitHubActions/CI.png"/>
+</p>
 
 
+- CD stands for **Continuous Delivery/Deploy**: this pipeline receives the new release and manages its deploy in a new environment, be it the final production phase or a testing/homologation environment. Here we have bug checks, end-to-end tests, ensuring if all requirements are being met, manual validation, etc.
 
+<p align="center">
+<img alt="CD" width="100%" src="Day4_GitHubActions/CD.png"/>
+</p>
 
+We'l use GitHub Actions, which has a focus in automation. Let's focus into some of its core concepts:
 
+- Workflow:
+
+- Events:
+
+- Jobs:
+
+- Steps:
+
+- Actions:
+
+- Runners: 
 
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
