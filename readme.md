@@ -982,17 +982,31 @@ We're deeper into DevOps territory now, in an area that only somewhat intersects
 
 We'l use GitHub Actions, which has a focus in automation. Let's focus into some of its core concepts:
 
-- Workflow:
+- **Workflow**: the flow itself, written declaratively in a .yaml file, defining each steps to be performed in the pipeline. In GitHub Actions, these steps are triggered by...
 
-- Events:
+- **Events**: keep the pipeline flowing; these can be git commits, card creation, manual executions, etc
 
-- Jobs:
+- **Jobs**: a group of tasks (actions) to be performed in orderly manner (also declarative).
 
-- Steps:
+- **Steps**: the orderly group of actions.
 
-- Actions:
+- **Actions**: the tasks to be executed. It can be a command, a script or more complex processes that encapsulates code.
 
-- Runners: 
+- **Runners**: the agent who actually executes processes. It's like.. a daemon?
+
+
+We'll perform an app delivery project to test these concepts here. Every commit we do in the git repository will trigger an automation in GitHubActions to perform CI (we'll generate a new Docker file) and then CD (deploy through Kubernetes).
+
+
+<p align="center">
+<img alt="pr" width="100%" src="Day4_GitHubActions/project.png"/>
+</p>
+
+---
+
+We must have a kubernetes cluster running as a prerequisite for this project. I've created one with `k3d cluster create my-cluster --servers 2 --agents 2`.
+
+We must also have the git repository ready. Since we're working with the fake-shop application, I'll fork it from Kubedev (https://github.com/KubeDev/fake-shop) and add the k8s folder with the implementations from Day3.
 
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
