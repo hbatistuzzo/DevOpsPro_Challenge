@@ -1092,12 +1092,53 @@ The actions tab will show the events being triggered in real time! Look at the g
 
 We can now edit our dummy main.yml file to actually perform real tasks, instead of dummy echo commands. In order for the steps to actually take place, I must tell the runner agent where to look for the files that we're using. We're gonna call "_Actions_", pre-defined blocks of code; we have a catalog available on the main.yml editor page: it's the **Marketplace**, which we can search to our hearts content. It's also available on https://github.com/marketplace.
 
+Search for "checkout" and take a look at that action. The page displays info and how to use. Let's edit the .yml file. 
 
+```
+[... etc]
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: obtain project code
+        uses: actions/checkout@v4
+      - name: authenticate on DockerHub
+        run: echo "executing the Docker Login command"
+[... etc]
+```
 
+don't forget the version for the action! We need to ensure Idempotency whenever possible. Next step, DockerHub authentication. Is there an action for that? Search the Marketplace, and yeah, [there is](https://github.com/marketplace/actions/docker-login):
 
+```
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: obtain project code
+        uses: actions/checkout@v4
+        
+      - name: Authenticate in Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: authenticate on Docker Hub
+        run: echo "executing the Docker Login command"
+```
 
+We don't want to input confidential information, but we must provide it somehow. So what do? GitHub has a resource to solve this issue: _Secrets_. On the repository page, go to settings, "secrets and variables", and add a new repository secret:
 
+<p align="center">
+<img alt="pr" width="100%" src="Day4_GitHubActions/secrets.png"/>
+</p>
 
+We do the same with the password. Great, now this info will be available for us to use in Actions. Let's test:
 
+<p align="center">
+<img alt="pr" width="100%" src="Day4_GitHubActions/dockerlogin.gif"/>
+</p>
+
+Huge success!
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
