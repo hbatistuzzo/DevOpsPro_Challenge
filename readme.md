@@ -1252,6 +1252,19 @@ and define the manifests and the images. But we _must_ modify the manifest file 
            hbatistuzzo/fake-shop:v${{github.run_number}}
 ```
 
+and it's set. Any modifications I make, for example, on the index.html file of the rep, will be transcribed in real time once I push the commit. GitHub Actions will take care of enforcing the pipeline, building the image, running the cluster, executing the tasks from the fake-shop manifest file, everything. It has impeccable logging as well, so any misfires and errors will be caught with ease. Now, we trigger the **whole** process built on the previous 3 days with a single commit. Cool stuff!
+
+---
+
+<br>
+
+<div align="center">
+
+# $\color{goldenrod}{\textrm{Day 5 - Prometheus + Grafana}}$
+
+## $\color{goldenrod}{\textrm{4.1 - Intro}}$
+
+</div>
 
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
