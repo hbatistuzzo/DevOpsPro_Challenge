@@ -1139,6 +1139,30 @@ We do the same with the password. Great, now this info will be available for us 
 <img alt="pr" width="100%" src="Day4_GitHubActions/dockerlogin.gif"/>
 </p>
 
-Huge success!
+Huge success! Now we need to build our image. We could run the command itself, but let's use an [action for that](https://github.com/marketplace/actions/build-and-push-docker-images). We need the context (for the Docker daemon), the file, the push and tags. Let's add it to the .yml:
+
+```
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: obtain project code
+        uses: actions/checkout@v4
+
+      - name: authenticate on Docker Hub
+        run: echo "executing the Docker Login command"
+      - name: Authenticate in Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+
+```
+
+we're adding 2 tags, the current and the latest, as it is a good custom. For the current, we'll use the `hbatistuzzo/fake-shop:v${{github.run_number}}` constructor, as it will always update the version information with the run number. Very handy.
+
+
+
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
