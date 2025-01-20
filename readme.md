@@ -1110,6 +1110,7 @@ jobs:
 don't forget the version for the action! We need to ensure Idempotency whenever possible. Next step, DockerHub authentication. Is there an action for that? Search the Marketplace, and yeah, [there is](https://github.com/marketplace/actions/docker-login):
 
 ```
+[... etc]
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -1125,6 +1126,7 @@ jobs:
           
       - name: authenticate on Docker Hub
         run: echo "executing the Docker Login command"
+[... etc]
 ```
 
 We don't want to input confidential information, but we must provide it somehow. So what do? GitHub has a resource to solve this issue: _Secrets_. On the repository page, go to settings, "secrets and variables", and add a new repository secret:
@@ -1142,26 +1144,113 @@ We do the same with the password. Great, now this info will be available for us 
 Huge success! Now we need to build our image. We could run the command itself, but let's use an [action for that](https://github.com/marketplace/actions/build-and-push-docker-images). We need the context (for the Docker daemon), the file, the push and tags. Let's add it to the .yml:
 
 ```
+[... etc]
 jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
       - name: obtain project code
         uses: actions/checkout@v4
-
-      - name: authenticate on Docker Hub
-        run: echo "executing the Docker Login command"
+        
       - name: Authenticate in Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           
-
+      - name: Docker Image Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          push: true
+          file: ./src/Dockerfile
+          tags: |
+            hbatistuzzo/fake-shop:latest
+            hbatistuzzo/fake-shop:v${{github.run_number}}
+[... etc]            
 ```
 
-we're adding 2 tags, the current and the latest, as it is a good custom. For the current, we'll use the `hbatistuzzo/fake-shop:v${{github.run_number}}` constructor, as it will always update the version information with the run number. Very handy.
+we're adding 2 tags, the current and the latest, as it is a good custom. For the current, we'll use the `hbatistuzzo/fake-shop:v${{github.run_number}}` constructor, as it will always update the version information with the run number. Very handy. Now, DockerHub shows that the "latest" tag has just been updated, and there's a new v5 version (since I was on the fith run of the pipeline).
 
+<p align="center">
+<img alt="pr" width="100%" src="Day4_GitHubActions/hub.png"/>
+</p>
+
+---
+
+We can now focus on the CD pipeline! We _could_ implement this part with a Kubernetes cluster running on the local machine with a "local agent", but this is more advanced.
+
+Which means that once again Amazon will receive my hard-earned bucks as I must deploy a cluster through their arcane services. Let's go back to the .yml code;
+
+Before anything, I need to point to the deployment.yml manifest file. Since I'm on another job now, I need to rewrite the code to obtain the project files:
+
+```
+      - name: obtain project code
+        uses: actions/checkout@v4
+```
+
+Sure enough, there is a ["Configure AWS Credentials"](https://github.com/marketplace?query=aws+configure) Action on the marketplace, so we're using that.
+
+```
+  cd:
+    runs-on: ubuntu-latest
+    needs: [ci]
+    steps:
+      - name: obtain project code
+        uses: actions/checkout@v4
+        
+      - name: authenticate on AWS
+        run: echo "executing the aws configure command"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+```
+
+Once again we need the credentials, so we're setting up 2 new secrets in this repository too.
+
+<p align="center">
+<img alt="pr" width="100%" src="Day4_GitHubActions/aws_auth.png"/>
+</p>
+
+Once again, a huge success!! Now the cluster. Last time, we configured the eks with an initial setup: `aws eks update-kubeconfig --name my_cluster`. This commmand _must_ be executed on the pipeline, and there isn't a specific Actions for that. No problem, we'll simply run it with
+
+```
+- name: configure kubectl
+  run: aws eks update-kubeconfig --name my_cluster
+```
+
+With this done, we can run the cluster. Thankfully, Azure has made a [Deploy manifests action for Kubernetes](https://github.com/marketplace/actions/deploy-to-kubernetes-cluster) and posted on the marketplace. We'll use that!
+
+We must set the permissions
+
+```
+  cd:
+    runs-on: ubuntu-latest
+    needs: [ci]
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+```
+
+and define the manifests and the images. But we _must_ modify the manifest file so it knows the right version to use!
+
+```
+      - name: configure kubectl
+        run: aws eks update-kubeconfig --name my_cluster #
+        
+      - name: manifest deployment on kubernetes
+        uses: Azure/k8s-deploy@v5
+        with:
+         manifests: |
+           ./k8s/deployment.yaml
+         images: |
+           hbatistuzzo/fake-shop:v${{github.run_number}}
+```
 
 
 
