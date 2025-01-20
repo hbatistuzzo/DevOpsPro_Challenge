@@ -998,15 +998,106 @@ We'l use GitHub Actions, which has a focus in automation. Let's focus into some 
 We'll perform an app delivery project to test these concepts here. Every commit we do in the git repository will trigger an automation in GitHubActions to perform CI (we'll generate a new Docker file) and then CD (deploy through Kubernetes).
 
 
+
 <p align="center">
 <img alt="pr" width="100%" src="Day4_GitHubActions/project.png"/>
 </p>
 
 ---
 
+<br>
+
+<div align="center">
+
+## $\color{goldenrod}{\textrm{4.2 - Creating a dummy pipeline}}$
+
+</div>
+
 We must have a kubernetes cluster running as a prerequisite for this project. I've created one with `k3d cluster create my-cluster --servers 2 --agents 2`.
 
-We must also have the git repository ready. Since we're working with the fake-shop application, I'll fork it from Kubedev (https://github.com/KubeDev/fake-shop) and add the k8s folder with the implementations from Day3.
+We must also have the git repository ready. Since we're working with the fake-shop application, I'll fork it from Kubedev (https://github.com/KubeDev/fake-shop) and add the k8s folder with the implementations from Day3. You'll notice that "Actions" is one of the tabs available for the repository on GitHub. It has suggestions based on the type of files in the repository, but we'll use the "set up a workflow yourself" option. It opens the .yml file! Let's start declaring:
+
+```
+name: CI-CD # obligatory
+
+on: # the event that needs to be triggered to initiate the workflow automation
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: authenticate on Docker Hub
+        run: echo "executing the Docker Login command"
+      - name: Docker Image construction
+        run: echo "executing Docker Build command"
+      - name: Docker Image upload
+        run: echo "executing Docker Build push"
+
+  cd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: authenticate on AWS
+        run: echo "executing the aws configure command"
+      - name: configure kubectl
+        run: echo "executing aws eks update-kubeconfig command"
+      - name: manifest deployment on kubernetes
+        run: echo "executing kubectl apply command"
+```
+
+We're using 2 events to trigger the workflow: a push to the repository (observing the main branch), and the workflow dispatch (which enables me to manually execute the pipeline); the latter is useful for testing since we don't need to keep commiting to test the events.
+
+We're also creating 2 jobs, one for CI and one for CD. Every time that I declare the action sequence to be implemented in a job, I must also declare the `runs-on` (the runner agent). The ubuntu environment is a good choice. The actions themselves are implemented in the steps.
+
+I will now attempt a highly dangerous commit on the main branch. This is irresponsible, but we're doing it for didactic purposes.
+
+<p align="center">
+<img alt="pr" width="100%" src="Day4_GitHubActions/actions.png"/>
+</p>
+
+If I return now to the actions tab, there will be a "CI-CD" workflow implemented. It shows that the events were triggered, and details the actions run:
+
+<p align="center">
+<img alt="pr" width="100%" src="Day4_GitHubActions/actions2.png"/>
+</p>
+
+However, as the summary shows, the CI and CD jobs are being executed together. This is not ideal, since we want a pipeline. I must define that CD _depends_ on the CI job. Let's go to the code tab (notice that it has created a .github workflows folder) and edit our main.yml file.
+
+All we need to do is add a new line with the `needs` parameter:
+
+```
+  cd:
+    runs-on: ubuntu-latest
+    needs: [ci]
+    steps: etc
+```
+
+The actions tab will show the events being triggered in real time! Look at the gif:
+
+<p align="center">
+<img alt="pr" width="100%" src="Day4_GitHubActions/actions3.gif"/>
+</p>
+
+---
+
+
+<div align="center">
+
+## $\color{goldenrod}{\textrm{4.3 - Creating the actual pipeline}}$
+
+</div>
+
+
+We can now edit our dummy main.yml file to actually perform real tasks, instead of dummy echo commands. In order for the steps to actually take place, I must tell the runner agent where to look for the files that we're using. We're gonna call "_Actions_", pre-defined blocks of code; we have a catalog available on the main.yml editor page: it's the **Marketplace**, which we can search to our hearts content. It's also available on https://github.com/marketplace.
+
+
+
+
+
+
+
 
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
