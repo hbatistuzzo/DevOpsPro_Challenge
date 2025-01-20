@@ -1262,9 +1262,48 @@ and it's set. Any modifications I make, for example, on the index.html file of t
 
 # $\color{goldenrod}{\textrm{Day 5 - Prometheus + Grafana}}$
 
-## $\color{goldenrod}{\textrm{4.1 - Intro}}$
+## $\color{goldenrod}{\textrm{5.1 - Intro}}$
 
 </div>
+
+So far we know how to:
+
+- set up and containerize an application with Docker;
+- leverage the power of Kubernetes clusters to manage said containers;
+- host services (instances of EC2 machines and/or clusters) on the cloud;
+- automate the deploy of applications with GitHub Actions.
+
+Now that our application is deployed and automated, a 5th and final step would be to monitor its health so that, _in case_ anything happens for whatever reason, we can antecipate the damage control. Let's see some concepts:
+
+* Metrics: numerical measurements related to elements of our software and/or infrastructure, usually displayed in time series. These can be:
+  + System Metrics: related to the environment or the software e.g. quantity of requisitions, quantity of errors, resource consumption, most accessed API's, time to access a resource, etc;
+  + Business Metrics: number of users accessing the application, tickets sent, number of sales, purchases of a product, etc
+
+It is particularly useful to have these 2 kind of metrics tied together, since there might be correlations between them. To collect these metrics and monitor our environment, we can use the open source tool Prometheus (from SoundCloud, believe it or not), which uses time-series DB and offers myriad visualization methods. It's the 2nd certified project from the Cloud Native Computing Foundation (the 1st being Kubernetes), so it's a hardened tool that saw a lot of development and improvement over the years.
+
+<p align="center">
+<img alt="pr" width="100%" src="Day5_prometheus/prom.png"/>
+</p>
+
+It has a couple of components:
+- The central Prometheus Server houses the TSDB (Storage), Service Discovery (Retrieval) and the look-up tool (PromQL, which can be accessed through a number of ways e.g. Web UI, Grafana, API)
+- Prometheus works actively as the application runs passively i.e. it will proactively gather data on the application by interfacing with the app endpoint. It also has optiosn for doing that, the most simple one being "Jobs".
+- If we're using tools such as RMDBs, which don't natively interface with Prometheus, we can utilize "Exporters" to bridge the gap. There're also Push Gateways that can be implemented to look at specific short-duration processes. More on that later.
+- Finally, if needed, Prometheus triggers warnings and send them to the AlertManager component, that manages the information and makes a decision: send a single e-mail, notify the team, group a number of messages and send them together, send a message in Slack, etc
+
+Of course, we must configure our app to ensure that it has an endpoint that is exposing relevant information to Prometheus in a language that it understands: ~~greek~~ PromQL. There a number of libraries to help us accomplish this. 
+
+So how to configure Prometheus? Once again, we'll utilize .yaml files to configure it declaratively.
+
+---
+
+<div align="center">
+
+## $\color{goldenrod}{\textrm{5.2 - Usage}}$
+
+</div>
+
+Once again, we must have our Kubernetes cluster running.
 
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
