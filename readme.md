@@ -1303,7 +1303,21 @@ So how to configure Prometheus? Once again, we'll utilize .yaml files to configu
 
 </div>
 
-Once again, we must have our Kubernetes cluster running.
+Once again, we must have our Kubernetes cluster running to advance. We're using a deployment.yaml template that's sitting in the prometheus folder of the 5th day (next to k8s). We run it with `kubectl apply -f prometheus/deployment.yaml` to install Prometheus and Grafana, and to set these new components on the cluster that was running my application. `kubectl get all` will display these new objects.
 
+<p align="center">
+<img alt="pr" width="100%" src="Day5_prometheus/setup.png"/>
+</p>
+
+Notice that there is a new LoadBalancer "service/prometheus-server" which yields an external-ip to be accessed in the browser. This is what we'll use to access the Prometheus tool. The GUI is not exactly slick (but we can fix that later).
+
+
+<div align="center">
+
+## $\color{goldenrod}{\textrm{5.3 - Grafana}}$
+
+</div>
+
+>__WARNING__ In Progress!
 
 ![Abhinandan Trilokia](https://raw.githubusercontent.com/Trilokia/Trilokia/379277808c61ef204768a61bbc5d25bc7798ccf1/bottom_header.svg)
