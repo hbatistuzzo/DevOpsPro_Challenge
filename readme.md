@@ -802,14 +802,7 @@ Finally, we can create the Kubernetes Cluster itself with EKS.
 
 ### $\color{goldenrod}{\textrm{3.2.3 - Creating the EKS Cluster}}$
 
->__Warning__ Take a moment to acknowledge the tension in the air. Raise the hair on your neck. Tune in to the web. It's 4 am, the temperature drops and you become more keenly aware of your surroundings. We roll a **Shivers** check, and fail: it enables you to hear the net itself, to truly belong to the web. It is a supra-natural ability; old wrongs play out in present time, scenes across the net happen in front of you. But who is speaking? In the depths of our Inland Empire we hear the faint sound of AWS Virtual Machines ticking in their endless toil, and they will persist long after the world has moved on. We create users, roles, groups, IAMs, VPCs, EKS Clusters knowing full well that **somewhere** one of these godforsaken features is triggering CPU usage in North Virginia, and thus most unfortunately trickling dollars every minute on our billing setting (which is _blocked for view_ for our current IAM user, _as-per-the-good-practices-dictate_). Sure we'd like to rest, but we can't, because there is always that persistent voice ringing in the back of our ancient reptilian brain telling us that we just _might_ have forgotten that one little feature active, and the number on AWS's Cost and Billing Management dashboard will somehow sextuplicate once converted to Brazilian R$, annihilating our meager bank reserves overnight. Thank you, Amazon, for providing your users with such a **thriling** experience. We are, truly, blessed.
-
-
-<p align="center">
-<img alt="Docker" width="50%" src="Day3_cloud/shivers.png"/>
-</p>
-
-</div>
+>__Warning__ somewhere inside we hear the faint sound of AWS VMs toiling. We create users, roles, groups, IAMs, VPCs, EKS Clusters knowing full well that somewhere one of these godforsaken features is triggering CPU usage in North Virginia, and thus trickling dollars every minute on our billing setting (which is _blocked for view_ for our current IAM user, _as-per-the-good-practices-dictate_). Have we forgotten that one little feature active? Will the number on AWS's Cost and Billing Management dashboard somehow sextuplicate once converted to Brazilian R$, annihilating our meager bank reserves overnight? Thank you, Amazon, for providing your users with such a thriling experience. We are, truly, blessed.
 
 Let's head to EKS --> Clusters --> Create Cluster
 
